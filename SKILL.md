@@ -1,132 +1,122 @@
 ---
 name: truthtracer
 description: >-
-  Don't ask whether a paper is fraudulent. Ask where the evidence stops supporting 
-  the claims. TruthTracer is an academic risk early-warning system that systematically 
-  audits research logic, data, statistics, text integrity, citation networks, and 
-  reproducibility — generating traceable evidence chains across 7 domains and 30+ 
-  detection methods. RIGID-framework-inspired (Monash University, 2024).
-version: 2.2.0
+  Academic risk early-warning system. Audits papers for statistical anomalies,
+  tortured phrases, citation integrity, and author network signals. Generates
+  traceable evidence chains. RIGID-framework-inspired. Use when the user asks
+  to audit, investigate, or forensically examine a paper.
+version: 2.3.0
 metadata:
   hermes:
-    tags: [academic-integrity, fraud-detection, research-forensics, evidence-chain,
-           risk-assessment, peer-review, systematic-audit, tortured-phrases,
-           paper-mill-detection, name-disambiguation, cross-domain, RIGID-framework]
+    tags: [academic-integrity, fraud-detection, research-forensics, peer-review,
+           data-audit, evidence-chain, risk-assessment]
     category: research
 ---
 
-# TruthTracer — Academic Risk Early-Warning System
+# TruthTracer
 
-> **Don't ask whether a paper is fraudulent. Ask where the evidence stops supporting the claims.**
-
-像审稿人、科研诚信官和出版商调查员一样审查论文，发现隐藏的科研诚信风险。不是"鉴定论文是否造假"的二元分类器，而是通过系统审计研究逻辑、数据、统计、文本、引用网络和可重复性，识别证据链断裂点并生成可追溯证据的学术风险预警系统。
+> Don't ask whether a paper is fraudulent. Ask where the evidence stops supporting the claims.
 
 ---
 
-## Architecture
+## When to Use
 
+Load this skill when the user asks to:
+
+- "audit this paper" / "check this paper for fraud" / "forensic analysis"
+- "investigate this author" / "look into this researcher"
+- "scan for tortured phrases" / "check for AI-generated text in this paper"
+- "verify the statistics in this paper" / "are these numbers real"
+- "run TruthTracer on…"
+
+---
+
+## How to Use
+
+### Step 1: Gather the paper
+
+Ask the user for one of:
+- A PDF file path
+- A plain-text extraction of the paper
+- A DOI or paper title (for network investigation only)
+
+If the user provides a PDF, extract text first:
+
+```bash
+python scripts/extract_pdf.py <pdf_path> <output_txt>
 ```
-TruthTracer/
-├── SKILL.md
-├── scripts/
-│   ├── scorer.py              ← Evidence fusion + report generation
-│   ├── stats_engine.py        ← Statistical forensics (21 methods)
-│   ├── network_engine.py      ← Author investigation (10 methods)
-│   ├── text_engine.py         ← Text forensics (tortured phrases, AI patterns)
-│   ├── citation_engine.py     ← Citation audit (retracted, fabricated, self-cite)
-│   ├── distribution_engine.py ← Distribution patterns (dispersion, homogeneity)
-│   ├── preprint_engine.py     ← Preprint-published comparison
-│   ├── supplement_engine.py   ← Supplementary material audit
-│   ├── forensics.py           ← Full 21-method stats engine (detailed)
-│   ├── investigator.py        ← Full 10-signal network engine (detailed)
-│   ├── case_builder.py        ← Legacy case builder (v2.1)
-│   └── pysprite_vendor.py     ← GRIM+SPRITE (QuentinAndre/pysprite, MIT)
-├── references/
-│   └── detection_playbook.md  ← Fraud taxonomy + detection workflows
-├── examples/
-└── investigations/
-```
 
-## Seven Detection Engines
+### Step 2: Run the audit
 
-| Engine | File | Methods | What It Detects |
-|--------|------|---------|-----------------|
-| **Stats** | `stats_engine.py` | 21 | Mathematical impossibilities + statistical anomalies |
-| **Network** | `network_engine.py` | 10 | Author retraction rates, citation cartels, paper mills |
-| **Text** | `text_engine.py` | 6 | Tortured phrases (Cabanac 2023), AI patterns, salami slicing |
-| **Supplement** | `supplement_engine.py` | 5 | SI completeness, cross-verification, data accessibility |
-| **Citation** | `citation_engine.py` | 3 | Retracted references, fabricated citations, self-cite rate |
-| **Distribution** | `distribution_engine.py` | 2 | Over/underdispersion, variance homogeneity excess |
-| **Preprint** | `preprint_engine.py` | 2 | Preprint-published outcome switching, abstract divergence |
-| **Scorer** | `scorer.py` | — | Tiered evidence fusion, paper-type context, report generation |
+Choose the appropriate engine based on what the user needs:
 
-## Signal Severity Tiers
+| User asks for | Command |
+|---------------|---------|
+| Full audit | `python scripts/scorer.py --stats <stats_json> --network <network_json> --output report.md` |
+| Stats only | `python scripts/forensics.py audit --paper <data.json> > audit.json` |
+| Text check | `python scripts/text_engine.py check <text_file>` |
+| Author check | `python scripts/network_engine.py investigate "Author Name" --deep` |
 
-| Tier | Weight | Examples | Fraud Certainty |
-|------|--------|----------|-----------------|
-| **CRITICAL** | 3 pts | GRIM impossible, mean outside scale, events > at-risk, correlation triangle impossible | Mathematical impossibility — near-certain |
-| **STRONG** | 2 pts | Benford non-conformity (MAD>0.03), statcheck gross error, 10+ tortured phrases, retraction rate >10% | Statistical/textual/network anomaly — high suspicion |
-| **MODERATE** | 1 pt | Digit preference, duplicate numbers, SD homogeneity, 2+ tortured phrases | Pattern anomaly — worth investigating |
-| **WEAK** | 0.5 pt | Rounding uniformity, funding disclosure, velocity, 1 tortured phrase | Minor concern — often false positive |
+### Step 3: Present findings
 
-**Golden Rule**: 0 CRITICAL signals → risk ceiling at MEDIUM. Only mathematical impossibility is near-certain fraud proof.
+Summarize the results for the user in plain language:
 
-## Risk Stratification
+1. **Risk level** — CRITICAL / HIGH / MEDIUM / LOW / CLEAN
+2. **Top 3 signals** — what flagged and why
+3. **Evidence chain** — where the data stops supporting the claims
+4. **Recommendation** — what action to take (request raw data, cross-check, etc.)
+
+Always remind the user: *TruthTracer flags risks, not verdicts. Human judgment required.*
+
+---
+
+## Risk Framework
 
 | Level | Criteria | Action |
 |-------|----------|--------|
-| **CRITICAL** | 2+ mathematical impossibilities | Escalate to ethics committee |
-| **HIGH** | 1 impossibility OR multiple strong signals | Request raw data; statistical review |
-| **MEDIUM** | Statistical/text anomalies, no impossibilities | Request clarification |
-| **LOW** | Minor pattern anomalies | Standard peer review |
-| **CLEAN** | No signals | Proceed with confidence |
+| CRITICAL | 2+ mathematical impossibilities | Escalate to ethics committee |
+| HIGH | 1 impossibility OR multiple strong signals | Request raw data |
+| MEDIUM | Anomalies, no impossibilities | Request clarification |
+| LOW | Minor pattern anomalies | Standard peer review |
+| CLEAN | No signals | Proceed |
+
+**Golden rule**: Zero CRITICAL signals caps risk at MEDIUM. Only mathematical impossibility constitutes near-certain fraud.
+
+---
 
 ## Paper-Type Awareness
 
-| Type | Detection Keywords | Adjustment |
-|------|-------------------|------------|
-| `economic_model` | cost, techno-economic, scenario, LCA, US$ | Benford/digit/rounding → 30% weight |
-| `clinical` | patients, trial, hazard ratio, survival | Count/survival → 150% weight |
-| `experimental` | experiment, randomized, p <, t-test | Full weight on all tests |
-| `review` | review, meta-analysis, systematic | Skip statistical tests |
+The scorer automatically adjusts based on paper type:
 
-## Name Disambiguation (v2.2)
+| Type | Detected by | Adjustment |
+|------|------------|------------|
+| Economic/LCA models | cost, techno-economic, scenario, LCA, US$ | Benford/digit checks → 30% weight |
+| Clinical trials | patients, trial, hazard ratio, survival | Survival checks → 150% weight |
+| Experimental | experiment, randomized, p <, t-test | Full weight on all tests |
+| Reviews | review, meta-analysis, systematic | Skip statistical tests |
 
-Common names cause 30-40% contamination in author profile databases. TruthTracer filters by research domain keywords before analysis, removing misattributed papers from unrelated fields. Without this filter, author profiles can contain >30% of someone else's work, making every network signal unreliable. TruthTracer fixes it before analysis starts.
+---
 
-## Key Findings from Live Testing
+## Tool Reference
 
-| Test Subject | Result | Key Signal |
-|-------------|--------|------------|
-| Known fraudster (183 retractions) | **HIGH** | Retraction rate 21.4% |
-| Nobel laureate (4 self-retractions) | MEDIUM | Retraction rate 0.4% (self-retractions) |
-| Clean economics paper | **LOW** | Economic model → Benford downgraded |
-| Retracted paper with multi-author collusion | **CRITICAL** | Network engine caught collusion pattern |
-| Clean LCA paper | **LOW** | LCA model detected, correctly downgraded |
-| Clean researcher with common name | **LOW** | 0 retractions, 0 tortured phrases after disambiguation |
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/scorer.py` | Evidence fusion + report generation | `--stats <json> --network <json> --output <md>` |
+| `scripts/forensics.py` | 21 statistical methods | `audit --paper <json>` |
+| `scripts/investigator.py` | 10 network signals | `investigate "Name" --deep` |
+| `scripts/text_engine.py` | Tortured phrases, AI patterns | `check <file>` |
+| `scripts/network_engine.py` | Author network analysis | `investigate "Name" --deep` |
+| `scripts/citation_engine.py` | Citation integrity | `audit <doi>` |
+| `scripts/supplement_engine.py` | SI completeness | `audit <doi>` |
+| `scripts/preprint_engine.py` | Preprint comparison | `compare <preprint_doi> <published_doi>` |
+| `scripts/distribution_engine.py` | Dispersion patterns | `check <data>` |
+| `scripts/extract_pdf.py` | PDF text extraction | `<pdf> [output]` |
 
-## Quick Start
-
-```bash
-# Full audit (all engines)
-python scripts/scorer.py --stats audit.json --network investigator.json --output report.md
-
-# Text-only check
-python scripts/text_engine.py check "D:/papers/suspicious.txt"
-
-# Author investigation
-python scripts/network_engine.py investigate "Author Name" --deep
-
-# Generate report
-python scripts/scorer.py --stats audit.json --network investigator.json --output report.md
-```
+---
 
 ## References
 
-- RIGID Framework: https://doi.org/10.1016/j.eclinm.2024.102717 (Monash University, 2024)
-- Cabanac G et al. (2021). Tortured phrases. arXiv:2107.06751
-- Nuijten MB et al. (2016). statcheck. Behav Res Methods
-- Brown & Heathers (2017). The GRIM test. Soc Psychol Personal Sci
-- Simonsohn et al. (2014). p-curve. J Exp Psychol Gen
-- Heathers et al. (2018). SPRITE. PeerJ Preprints
-- COPE (2024). Flowcharts for handling research misconduct
+- RIGID Framework: doi:10.1016/j.eclinm.2024.102717
+- Tortured phrases detection: adapted from Cabanac et al. (2021), arXiv:2107.06751
+- GRIM + SPRITE: adapted from QuentinAndre/pysprite (MIT)
+- 29 of 31 statistical methods are original implementations
