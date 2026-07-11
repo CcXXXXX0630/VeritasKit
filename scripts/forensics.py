@@ -11,7 +11,7 @@ Methods:
   4. Bootstrap audit       — Resampled consistency check
   5. Sample-size sanity    — SD/CI vs N impossibility check
   6. Mass balance          — Input-output consistency (environmental)
-  7. CH4 formula audit     — Missing VSS/DS factor detection
+  7. Formula audit         — Missing conversion factor detection
   8. Monte Carlo sniff     — Parameter distribution plausibility
   9. Summary stats check   — Mean/SD/N internal consistency
  10. Digit preference      — Terminal digit rounding anomalies
@@ -477,61 +477,61 @@ def mass_balance_check(inputs: dict, outputs: dict, accumulation: float = 0,
 
 
 # ============================================================
-# 7. CH4 FORMULA AUDIT
+# 7. Result FORMULA AUDIT
 # ============================================================
 
-def ch4_formula_audit(reported_ch4: float, ds: float, vss_ds_ratio: float = 0.65,
-                       eta_ad: float = 0.55, k_ch4: float = 0.35) -> dict:
+def formula_audit(reported_value: float, ds: float, factor_a: float = 0.65,
+                       factor_b: float = 0.55, factor_c: float = 0.35) -> dict:
     """
-    Check if reported CH4 production is consistent with the correct formula.
+    Check if reported Result production is consistent with the correct formula.
     
-    Correct:   CH4 = DS * 1000 * f_VS * eta_AD * k_CH4
-                          = VSS * eta_AD * k_CH4
-    Wrong:     CH4 = DS * 1000 * eta_AD * k_CH4  (missing f_VS, inflates by 1/f_VS)
+    Correct:   Result = DS * 1000 * factor_conversion * eta_AD * k_Result
+                          = Intermediate * eta_AD * k_Result
+    Wrong:     Result = DS * 1000 * eta_AD * k_Result  (missing factor_conversion, inflates by 1/factor_conversion)
     
     Args:
-        reported_ch4: Reported CH4 value (Nm3/yr or similar)
+        reported_value: Reported Result value (Nm3/yr or similar)
         ds: Dry solids (t/yr or kg/d)
-        vss_ds_ratio: VSS/DS ratio (default 0.65)
-        eta_ad: Anaerobic degradation rate (default 0.55)
-        k_ch4: CH4 yield coefficient (Nm3/kgVS, default 0.35)
+        factor_a: Intermediate/DS ratio (default 0.65)
+        factor_b: Anaerobic degradation rate (default 0.55)
+        factor_c: Result yield coefficient (Nm3/kgVS, default 0.35)
     
     Returns:
         dict with formula audit results
     """
     # Correct formula
-    ch4_correct = ds * 1000 * vss_ds_ratio * eta_ad * k_ch4
+    result_correct = ds * 1000 * factor_a * factor_b * factor_c
     
-    # Wrong formula (missing f_VS)
-    ch4_wrong = ds * 1000 * eta_ad * k_ch4
+    # Wrong formula (missing factor_conversion)
+    result_wrong = ds * 1000 * factor_b * factor_c
     
     # Which formula matches reported?
-    ratio_correct = reported_ch4 / ch4_correct if ch4_correct > 0 else float('inf')
-    ratio_wrong = reported_ch4 / ch4_wrong if ch4_wrong > 0 else float('inf')
+    ratio_correct = reported_value / result_correct if result_correct > 0 else float('inf')
+    ratio_wrong = reported_value / result_wrong if result_wrong > 0 else float('inf')
     
     # Check closeness
     close_to_correct = abs(ratio_correct - 1.0) < 0.10
     close_to_wrong = abs(ratio_wrong - 1.0) < 0.10
     
     if close_to_correct:
-        formula_used = "CORRECT (includes VSS/DS factor)"
+        formula_used = "CORRECT (includes Intermediate/DS factor)"
         flag = "green"
     elif close_to_wrong:
-        formula_used = "WRONG — Missing VSS/DS factor (f_VS=0.65), inflates CH4 by 1.54x"
+        formula_used = "WRONG — Missing Intermediate/DS factor (factor_conversion=0.65), inflates Result by 1.54x"
         flag = "red"
     else:
-        formula_used = f"UNCLEAR — Matches neither correct ({ch4_correct:.1f}) nor wrong ({ch4_wrong:.1f}) formula"
+        formula_used = f"UNCLEAR — Matches neither correct ({result_correct:.1f}) nor wrong ({result_wrong:.1f}) formula"
         flag = "yellow"
     
     return {
-        "method": "CH4 Formula Audit",
-        "reported_ch4": reported_ch4,
+        "method": "Formula Audit",
+        "reported_value": reported_value,
         "ds": ds,
-        "vss_ds_ratio": vss_ds_ratio,
-        "eta_ad": eta_ad,
-        "k_ch4": k_ch4,
-        "ch4_correct_formula": round(ch4_correct, 2),
-        "ch4_wrong_formula": round(ch4_wrong, 2),
+        "factor_a": factor_a,
+        "factor_b": factor_b,
+        "factor_c": factor_c,
+        "result_correct_formula": round(result_correct, 2),
+        "result_wrong_formula": round(result_wrong, 2),
         "ratio_to_correct": round(ratio_correct, 3),
         "ratio_to_wrong": round(ratio_wrong, 3),
         "formula_used": formula_used,
@@ -1762,7 +1762,7 @@ def full_audit(paper_data: dict) -> dict:
             - 'p_values': list of p-values for p-curve
             - 'groups': list of {mean, sd, n, label} for summary stats consistency
             - 'mass_balance': {inputs, outputs, accumulation}
-            - 'ch4_params': {reported_ch4, ds, ...} for formula audit
+            - 'formula_params': {reported_value, ds, ...} for formula audit
             - 'mc_params': list of parameter dicts for MC sniff
     
     Returns:
@@ -1891,13 +1891,13 @@ def full_audit(paper_data: dict) -> dict:
         )
         flags['effect_size'] = results['effect_size']['verdict']
     
-    if 'ch4_params' in paper_data:
-        cp = paper_data['ch4_params']
-        results['ch4_formula'] = ch4_formula_audit(
-            cp['reported_ch4'], cp['ds'],
-            cp.get('vss_ds_ratio', 0.65), cp.get('eta_ad', 0.55), cp.get('k_ch4', 0.35)
+    if 'formula_params' in paper_data:
+        cp = paper_data['formula_params']
+        results['formula_check'] = formula_audit(
+            cp['reported_value'], cp['input_a'],
+            cp.get('factor_a', 0.65), cp.get('factor_b', 0.55), cp.get('factor_c', 0.35)
         )
-        flags['ch4_formula'] = results['ch4_formula']['verdict']
+        flags['formula_check'] = results['formula_check']['verdict']
     
     if 'mc_params' in paper_data:
         results['mc_sniff'] = mc_parameter_sniff(paper_data['mc_params'])

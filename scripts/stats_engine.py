@@ -70,7 +70,6 @@ def check_author(name):
         return {"name":name,"error":str(e)}
 
 # ═══════════════ MAIN ═══════════════
-txt_path = r"D:\论文写作\academic-data-forensics\investigations\sludge_lca\extracted_text.txt"
 with open(txt_path,'r',encoding='utf-8') as f:
     text = f.read()
 

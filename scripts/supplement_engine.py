@@ -48,7 +48,7 @@ def fetch_si_from_doi(doi: str) -> dict:
     - Journal SI pages
     
     Args:
-        doi: Paper DOI (e.g., "10.1016/j.biortech.2023.123456")
+        doi: Paper DOI (e.g., "10.1234/example.2025.000000")
     
     Returns:
         dict with SI links and metadata

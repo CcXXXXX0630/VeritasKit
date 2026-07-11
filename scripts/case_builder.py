@@ -31,7 +31,7 @@ STRONG_SIGNALS = [
     "p-curve left-skewed", "p-hacking suspected",
     "statcheck gross error", "p-value mismatch",
     "SPRITE failed", "no valid distribution",
-    "CH4 formula wrong", "missing VSS",
+    "formula derivation wrong", "missing conversion factor",
     "effect size mismatch",
 ]
 
